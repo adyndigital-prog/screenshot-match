@@ -19,15 +19,6 @@ export const Route = createFileRoute("/app/precificacao")({
 });
 
 type Modo = "fabricacao" | "revenda";
-type Produto = "camiseta" | "blusa" | "calca" | "vestido" | "saia" | "legging" | "moletom";
-const consumoEstimado: Record<Produto, number> = {
-  camiseta: 0.9, blusa: 1.2, calca: 1.5, vestido: 2, saia: 1,
-  legging: 1.1, moletom: 1.8,
-};
-const nomesProduto: Record<Produto, string> = {
-  camiseta: "Camiseta", blusa: "Blusa", calca: "Calça", vestido: "Vestido",
-  saia: "Saia", legging: "Legging", moletom: "Moletom",
-};
 const camposFab = [
   ["tecido", "Tecido (consumo × preço)", "Ex.: 1,2 m × R$ 18,00 = 21,60"],
   ["aviamentos", "Aviamentos", "Elástico, linha, etiquetas, tags"],
@@ -65,25 +56,12 @@ function Precificacao() {
   const [step, setStep] = useState(0);
   const [modo, setModo] = useState<Modo>("fabricacao");
   const [nome, setNome] = useState("");
-  const [produto, setProduto] = useState<Produto>("camiseta");
-  const [precoMetro, setPrecoMetro] = useState("");
-  const [usarReferencia, setUsarReferencia] = useState(false);
-  const [estrategia, setEstrategia] = useState<"conservadora" | "equilibrada" | "valor">("equilibrada");
   const [custos, setCustos] = useState<Record<string, string>>({});
-  const [v, setV] = useState({ imposto: "", taxa: "", comissao: "", outrasPct: "", tarifa: "", porPedido: "1", margem: "25", fixas: "", volume: "", atual: "", mercadoMin: "", mercadoMax: "", desconto: "10" });
+  const [v, setV] = useState({ imposto: "", taxa: "", comissao: "", outrasPct: "", tarifa: "", porPedido: "1", margem: "20", fixas: "", volume: "", atual: "", mercadoMin: "", mercadoMax: "", desconto: "10" });
   const set = (k: keyof typeof v) => (x: string) => setV({ ...v, [k]: x });
-  const escolherEstrategia = (x: "conservadora" | "equilibrada" | "valor") => {
-    setEstrategia(x);
-    setV((atual) => ({ ...atual, margem: x === "conservadora" ? "15" : x === "equilibrada" ? "25" : "35" }));
-  };
 
-  const campos = modo === "fabricacao" ? camposFab.filter(([k]) => k !== "tecido") : camposRev;
-  // Consumo orientativo inicial; varia conforme modelagem, tamanho, largura e rendimento do tecido.
-  const consumo = consumoEstimado[produto];
-  // R$ 20/m é apenas uma hipótese ilustrativa para simulação, nunca uma cotação de mercado.
-  const valorMetro = usarReferencia ? 20 : num(precoMetro);
-  const custoTecido = modo === "fabricacao" ? consumo * valorMetro : 0;
-  const custoDireto = campos.reduce((s, [k]) => s + num(custos[k] ?? ""), 0) + custoTecido;
+  const campos = modo === "fabricacao" ? camposFab : camposRev;
+  const custoDireto = campos.reduce((s, [k]) => s + num(custos[k] ?? ""), 0);
 
   const r = useMemo(() => calcularPreco({
     custoDireto,
@@ -128,40 +106,9 @@ function Precificacao() {
           </div>
         )}
         {step === 1 && (
-          <div className="space-y-5">
-            {modo === "fabricacao" && (
-              <section className="rounded-lg border p-4 space-y-4">
-                <div>
-                  <p className="font-medium">Vamos estimar o tecido para você</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Escolha a peça. O sistema sugere um consumo inicial para você não precisar saber essa conta.</p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-sm font-medium">Tipo de peça</span>
-                    <select value={produto} onChange={(e) => setProduto(e.target.value as Produto)} className="mt-1 w-full rounded-md border bg-card px-3 py-2 text-sm">
-                      {Object.entries(nomesProduto).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-                    </select>
-                  </label>
-                  <div className="rounded-md bg-muted p-3">
-                    <p className="text-xs text-muted-foreground">Consumo inicial estimado</p>
-                    <p className="font-display text-xl">{consumo.toLocaleString("pt-BR")} m por peça</p>
-                    <p className="text-xs text-muted-foreground">Referência aproximada; pode variar por tamanho, modelagem e largura do tecido.</p>
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Preço do tecido por metro" value={precoMetro} onChange={(x) => { setPrecoMetro(x); setUsarReferencia(false); }} hint="Se tiver uma cotação, informe aqui." />
-                  <label className="flex items-start gap-2 rounded-md border p-3 text-sm">
-                    <input type="checkbox" checked={usarReferencia} onChange={(e) => setUsarReferencia(e.target.checked)} className="mt-1" />
-                    <span><b>Não sei o preço ainda</b><span className="mt-1 block text-xs text-muted-foreground">Usar R$ 20/m apenas como hipótese ilustrativa, não como preço real de mercado.</span></span>
-                  </label>
-                </div>
-                <p className="text-sm">Custo estimado do tecido: <b>{brl(custoTecido)}</b> {usarReferencia && <span className="text-xs text-muted-foreground">(simulação provisória)</span>}</p>
-              </section>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              {campos.map(([k, l, h]) => <Field key={k} label={l} hint={h} value={custos[k] ?? ""} onChange={(x) => setCustos({ ...custos, [k]: x })} />)}
-            </div>
-            <div className="rounded-md bg-muted p-4"><span className="text-sm text-muted-foreground">Custo da peça {usarReferencia ? " (estimativa provisória)" : ""}</span><p className="font-display text-2xl">{brl(custoDireto)}</p></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campos.map(([k, l, h]) => <Field key={k} label={l} hint={h} value={custos[k] ?? ""} onChange={(x) => setCustos({ ...custos, [k]: x })} />)}
+            <div className="rounded-md bg-muted p-4 sm:col-span-2"><span className="text-sm text-muted-foreground">Custo da peça</span><p className="font-display text-2xl">{brl(custoDireto)}</p></div>
           </div>
         )}
         {step === 2 && (
@@ -174,27 +121,9 @@ function Precificacao() {
               <Field label="Tarifa fixa por pedido" value={v.tarifa} onChange={set("tarifa")} hint="Ex.: tarifa fixa do marketplace" />
               <Field label="Peças por pedido (média)" suffix="un." value={v.porPedido} onChange={set("porPedido")} hint="Usado para dividir a tarifa por peça" />
             </div>
-            <div className="rounded-lg border p-4 space-y-3">
-              <div>
-                <p className="font-medium">Qual é sua prioridade ao vender?</p>
-                <p className="mt-1 text-sm text-muted-foreground">Você não precisa conhecer margem de contribuição. Escolha uma estratégia e calculamos um cenário inicial para você.</p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {([
-                  ["conservadora", "Preço competitivo", "Meta inicial de 15%"],
-                  ["equilibrada", "Equilíbrio", "Meta inicial de 25%"],
-                  ["valor", "Maior contribuição", "Meta inicial de 35%"],
-                ] as const).map(([key, title, desc]) => (
-                  <button type="button" key={key} onClick={() => escolherEstrategia(key)} className={`rounded-md border p-3 text-left ${estrategia === key ? "border-primary ring-2 ring-primary" : "hover:bg-muted"}`}>
-                    <span className="block text-sm font-medium">{title}</span><span className="mt-1 block text-xs text-muted-foreground">{desc}</span>
-                  </button>
-                ))}
-              </div>
-              <details className="text-sm">
-                <summary className="cursor-pointer text-muted-foreground">Personalizar a meta (opcional)</summary>
-                <div className="mt-3"><Field label="Meta de margem de contribuição" suffix="%" value={v.margem} onChange={(x) => { set("margem")(x); setEstrategia("equilibrada"); }} /></div>
-              </details>
-              <p className="text-xs text-muted-foreground">Esses percentuais são cenários iniciais para simulação, não regras universais do mercado. A margem é o valor que sobra após custo da peça e despesas variáveis para ajudar a pagar as despesas fixas; não é lucro líquido.</p>
+            <div className="rounded-lg border p-4">
+              <Field label="Meta de margem de contribuição" suffix="%" value={v.margem} onChange={set("margem")} />
+              <p className="mt-2 text-xs text-muted-foreground">Quanto de cada venda deve sobrar, depois do custo da peça e das despesas da venda, para pagar suas despesas fixas e gerar lucro. Não é o lucro líquido.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Despesas fixas mensais (opcional)" value={v.fixas} onChange={set("fixas")} hint="Aluguel, salários, sistemas" />
