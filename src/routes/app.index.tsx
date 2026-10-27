@@ -56,7 +56,7 @@ function Dashboard() {
         <div className="rounded-lg border bg-card p-5 lg:col-span-3">
           <h2 className="text-lg">Custo x preço por peça</h2>
           <div className="mt-4 h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={exemplos}>
                 <CartesianGrid vertical={false} stroke="var(--border)" />
                 <XAxis dataKey="nome" tick={{ fontSize: 11 }} interval={0} />
