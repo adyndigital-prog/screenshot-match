@@ -143,7 +143,7 @@ function Precificacao() {
   );
 }
 
-function Stat({ l, v, s }: { l: string; v: string; s?: string }) {
+function Stat({ l, v, s }: { l: string; v: string; s?: string | undefined }) {
   return (
     <div className="rounded-md bg-muted p-4">
       <p className="text-xs text-muted-foreground">{l}</p>
